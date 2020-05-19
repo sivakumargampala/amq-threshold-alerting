@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<sub-flow name="implMuleLogin" doc:id="483b05c8-e05b-45ee-9c7b-f2c345aed3fe">
+		<logger level="INFO" doc:name="start logging"
+			doc:id="5d5f0d05-1773-4c30-956c-eaa093b7d393" message="start logging #[flow.name]" />
+		<choice doc:name="accessToken missing" doc:id="40c7ad93-00b0-4fcd-a92f-a060c5a716fa" >
+			<when expression="#[vars.accessToken == null]">
+				<ee:transform doc:name="set login payload" doc:id="1f8769e4-e08e-449e-920a-030a6d64f5b2">
+			<ee:message>
+				<ee:set-payload resource="dwls/setLoginPayload.dwl" />
+			</ee:message>
+		</ee:transform>
+				<until-successful maxRetries="5" doc:name="Until Successful" doc:id="c0dbeebf-d7be-4614-b5c3-542f2b547f97">
+			<http:request method="POST" doc:name="login to api platform" doc:id="a3354196-6d16-4792-861d-fcac737c6138" path="${mule.api.url.login}" config-ref="mule-http-request-config" />
+		</until-successful>
+				<ee:transform doc:name="save bearer token" doc:id="9f5eb8b6-5f02-4fd3-9e0f-cb0b5dbf7ea8">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+						<ee:set-variable resource="dwls/saveAccessToken.dwl" variableName="accessToken" />
+			</ee:variables>
+		</ee:transform>
+			</when>
+		</choice>
+	</sub-flow>
+<sub-flow name="implGetMqStats" doc:id="258b47ae-07fd-4b63-838f-473d8d0661fe" >
+		<logger level="INFO" doc:name="start Logging" doc:id="8bf2bdaa-6fa8-4b89-be15-39202d750d1a" message="start #[flow.name]"/>
+		<flow-ref doc:name="initiateConnection" doc:id="8367f0d9-d457-4919-94fd-a23d32350cc7" name="implMuleLogin"/>
+		<http:request method="GET" doc:name="Get Queue List" doc:id="dfed9f01-7d32-4a04-bb9b-3264b6fb4a6e" config-ref="mule-http-request-config" path="${mule.api.url.mqList}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.accessToken
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"environmentId" : "${secure::mule.env.id}",
+	"mqRegion" : "${mq.region}",
+	"organizationId" : "${secure::mule.api.orgId}"
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="batch list" doc:id="6e564cf0-b9c4-49a2-a255-5a6ec5264e7f" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dwls/separateIntoBatches.dwl" variableName="batchQueueList" />
+			</ee:variables>
+		</ee:transform>
+		<set-variable value="#[[]]" doc:name="Set Results" doc:id="6dd17755-ef44-4b8f-927d-6f1ea576cb35" variableName="fullResults"/>
+		<foreach doc:name="For Each" doc:id="835dee5f-87e2-4546-9147-e002956311ff" collection="#[vars.batchQueueList]">
+			<ee:transform doc:name="build input parms" doc:id="d13371f8-82d9-41df-9385-630f3635fc56">
+			<ee:message>
+				<ee:set-payload resource="dwls/buildQueueList.dwl" />
+			</ee:message>
+		</ee:transform>
+			<until-successful maxRetries="5" doc:name="Until Successful" doc:id="bad6a982-109a-4a39-9823-2d123aaa81f2" >
+				<http:request method="GET" doc:name="Get Queue Details" doc:id="0cdb0fcc-4196-457e-b409-98ee62b29399" config-ref="mule-http-request-config" path="${mule.api.url.mqDetails}">
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : vars.accessToken
+}]]]></http:headers>
+				<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"environmentId" : "${secure::mule.env.id}",
+	"mqRegion" : "${mq.region}",
+	"organizationId" : "${secure::mule.api.orgId}"
+}]]]></http:uri-params>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"destinationIds" : payload
+}]]]></http:query-params>
+			</http:request>
+			</until-successful>
+			<ee:transform doc:name="save results" doc:id="a59e368c-0abb-4998-b44b-a377f4d7286d">
+			<ee:message>
+			</ee:message>
+				<ee:variables >
+					<ee:set-variable resource="dwls/consoldateQueueResults.dwl" variableName="fullResults" />
+				</ee:variables>
+		</ee:transform>
+		</foreach>
+		<set-payload value="#[vars.fullResults]" doc:name="Set Final Payload" doc:id="97f21908-2bea-46e4-9fd0-bbda56650a8a" />
+	</sub-flow>	
+
+</mule>

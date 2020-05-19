@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:custom-metrics="http://www.mulesoft.org/schema/mule/custom-metrics"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/custom-metrics http://www.mulesoft.org/schema/mule/custom-metrics/current/mule-custom-metrics.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<sub-flow name="triggerAlert" doc:id="3c2cd2fb-85cb-472a-a068-d40322cc5a45" >
+		<logger level="INFO" doc:name="start logging" doc:id="5a9cdd32-02be-4ac7-96ce-109588d3c9d8" message="Attempting to fire alerts"/>
+		<ee:transform doc:name="convert payload to strings" doc:id="12e8d9ad-f577-4062-84a6-bf48903b007b">
+					<ee:message>
+				<ee:set-payload resource="dwls/filterAlerts.dwl" />
+					</ee:message>
+				</ee:transform>
+		<choice doc:name="Queues in alert status" doc:id="940e785d-aa40-4a48-ad7d-a3b2d54abcd4" >
+			<when expression="#[not isBlank(payload)]">
+				<cloudhub:create-notification doc:name="Create MQ depth alert" doc:id="2e1fbaa2-4709-43c7-ae34-7e88f0a85037" config-ref="CloudHub_Config" domain="${alerting.appname}" priority='#[if (vars.alertLevel == "CRITICAL") "ERROR" else "WARN"]'>
+					<cloudhub:message><![CDATA[#[vars.alertLevel default "" ++ ": One or more queues have a depth that exceeds the recommended limits"]]]></cloudhub:message>
+					<cloudhub:custom-properties><![CDATA[#[output application/java
+---
+{
+	"queues" : payload
+}]]]></cloudhub:custom-properties>
+				</cloudhub:create-notification>
+			</when>
+		</choice>
+	</sub-flow>
+	<flow name="alertQueueDepthFlow" doc:id="09f16534-3ee6-4b08-8d5d-4cc8a16efda4" >
+		<scheduler doc:name="Scheduler" doc:id="d436a93d-2e26-4d50-9082-7822d3934e86" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="${mq.alert.interval}" timeUnit="MINUTES"/>
+			</scheduling-strategy>
+		</scheduler>
+		<flow-ref doc:name="implGetMqStats" doc:id="ab6fc5f0-976a-46ad-9a32-400f843377ac" name="implGetMqStats"/>
+		<ee:cache doc:name="Cache" doc:id="13044fd1-4a7c-433b-a816-ac1e2afca116" >
+			<flow-ref doc:name='establishThresholds' doc:id="e08d144c-9118-4de2-b49a-923ac053b4b0" name="establishThresholds"/>
+		</ee:cache>
+		<ee:transform doc:name="filter for queue depth" doc:id="e23d86f2-51cf-45a0-8b41-c9edbbcaa3d0" >
+			<ee:message >
+				<ee:set-payload resource="dwls/filterForStressedQueues.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log results" doc:id="4e2f9866-d819-4013-bb99-a2b2230e99db" message="#[payload]" />
+		<scatter-gather doc:name="Scatter-Gather" doc:id="d0ec429a-c3dd-4b3c-b6ae-4d365da9cf59">
+					<route>
+						<set-variable value="WARNING" doc:name="Set Level to WARNING" doc:id="4b139b0a-143a-40e6-ad85-447764106a66" variableName="alertLevel" />
+						<flow-ref doc:name="Trigger Alert" doc:id="c6944003-ab45-41f1-af25-289545f4c3c7" name="triggerAlert" />
+					</route>
+					<route>
+						<set-variable value="CRITICAL" doc:name="Set Level to CRITICAL" doc:id="bfdbeaf3-574c-4596-af3f-adb0dace4d09" variableName="alertLevel" />
+						<flow-ref doc:name="Trigger Alert" doc:id="36fb6dcd-c0f4-481d-8099-ae1dcbc8b204" name="triggerAlert" />
+					</route>
+		</scatter-gather>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="db4c45c8-fad9-419e-98ed-137099578dc6" >
+				<logger level="ERROR" doc:name="Log error" doc:id="5a249708-56f8-4333-b80f-c4c4c725c031" message="#[error]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="establishThresholds" doc:id="d9ddb520-23eb-44a5-9405-4bbfef59a275" >
+		<logger level="INFO" doc:name="start logging" doc:id="00ac22cb-200b-4dd6-accc-23be97207960" message="establish queue level thresholds."/>
+		<ee:transform doc:name="get threshold defaults" doc:id="e885d843-e33d-46a7-bcb0-bfdd87421c02" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dwls/getDefaultLevels.dwl" variableName="defaultLevels" />
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="get threshold levels" doc:id="bbcce6db-a19e-4aa3-99ac-125ac98cfb45">
+			<ee:message>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dwls/establishThresholds.dwl" variableName="queueThresholds" />
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="set other queue thresholds with defaults" doc:id="c174bc0a-a5ff-4c18-8906-b668847df48d" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="dwls/setDefaultsForOtherQueues.dwl" variableName="queueThresholds" />
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="log thresholds" doc:id="fed4b5c3-e6ee-4f3f-be7f-0c0c75b0cdba" message="#[vars.queueThresholds]"/>
+	</sub-flow>
+</mule>

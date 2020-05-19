@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="a731466d-2304-4e64-a43f-5d9b5012609e" file="config-${mule.env}.yaml" />
+	<configuration-properties doc:name="Configuration properties" doc:id="167e9870-8aea-4a0b-a2b9-9e4eb424acc0" file="config-common.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="b24270b8-2004-46a3-beb8-d594be96cec1" file="config-secured-${mule.env}.yaml" key="${mule.encryptionKey}" />
+	<http:request-config name="mule-http-request-config" doc:name="HTTP Request configuration" doc:id="50e4f874-d8f3-4f40-a335-eaf347f09fa0" enableCookies="false">
+		<http:request-connection protocol="HTTPS" host="${mule.api.host}" port="${mule.api.port}"/>
+	</http:request-config>
+	<cloudhub:config name="CloudHub_Config" doc:name="CloudHub Config" doc:id="409e8e07-9853-48fa-bb1f-871573b9ea19" >
+		<cloudhub:connection username="${secure::mule.api.username}" password="${secure::mule.api.password}" environment="${secure::mule.env.id}"/>
+	</cloudhub:config>
+
+</mule>
