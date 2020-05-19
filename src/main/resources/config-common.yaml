@@ -1,0 +1,18 @@
+mule:
+  api:
+    host: "anypoint.mulesoft.com"
+    port: "443"
+    url:
+      login: "/accounts/login"
+      mqList: "/mq/admin/api/v1/organizations/{organizationId}/environments/{environmentId}/regions/{mqRegion}/destinations"
+      mqDetails: "/mq/stats/api/v1/organizations/{organizationId}/environments/{environmentId}/regions/{mqRegion}/queues"
+
+mq:
+  region: "us-east-1"
+  alert:
+    interval: "10"
+    default: 
+      warning: "20"
+      critical: "50"
+  individual:
+    thresholds: "test-queue:-1:10"

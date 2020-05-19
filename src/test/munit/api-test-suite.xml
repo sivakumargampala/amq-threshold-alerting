@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<munit:config name="api-test-suite.xml" />
+		<munit:test name="mqAlertTest" doc:id="2bcfa173-5bdd-461a-93c2-b19bc565afe3" description="Test">
+		<munit:enable-flow-sources >
+		</munit:enable-flow-sources>
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="mock login" doc:id="b6f68c75-bf5c-4f38-bf38-3324d53c3876" processor="http:request">
+			<munit-tools:with-attributes>
+				<munit-tools:with-attribute whereValue="login to api platform" attributeName="doc:name" />
+			</munit-tools:with-attributes>
+				<munit-tools:then-return>
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("munitPayloads/mockLoginPayload.json")]' mediaType="application/json" />
+				</munit-tools:then-return>
+		</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock queue List call" doc:id="f9ef796e-cecc-47d9-bf82-3e9954e4de18" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Get Queue List" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("munitPayloads/mqListResponse.json")]' mediaType="application/json" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock queue detail call" doc:id="e62a11bc-2b23-4851-b20b-48c9657555fb" processor="http:request">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="Get Queue Details" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return>
+					<munit-tools:payload value='#[MunitTools::getResourceAsString("munitPayloads/mqDetailsResponse.json")]' mediaType="application/json" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock Create Notification" doc:id="a84c56fa-e628-4403-a515-8b38d4364b43" processor="cloudhub:create-notification">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Create MQ depth alert" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+			<munit-tools:spy doc:name="Spy" doc:id="60340926-75b2-4380-8621-1ec18d240532" processor="ee:transform">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="filter for queue depth" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:after-call >
+					<munit-tools:assert-that doc:name="Assert that" doc:id="ba5ef231-7543-4e37-9409-9fc3dc19759a" is='#[MunitTools::equalTo(readUrl("classpath://munitPayloads/mqAlertFinalPayload.json","application/json"))]' expression="#[payload]" />
+				</munit-tools:after-call>
+			</munit-tools:spy>
+		</munit:behavior>
+		<munit:execution>
+			<flow-ref doc:name="alertQueueDepthFlow" doc:id="896f8851-9a11-469a-859d-90cbea6722d1" name="alertQueueDepthFlow"/>
+		</munit:execution>
+	</munit:test>
+		
+</mule>

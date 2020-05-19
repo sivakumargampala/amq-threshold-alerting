@@ -1,0 +1,49 @@
+[
+  {
+    "deadLetterQueueId": "test-dlq", 
+    "defaultDeliveryDelay": 0, 
+    "defaultLockTtl": 120000, 
+    "defaultTtl": 604800000, 
+    "encrypted": false, 
+    "fifo": false, 
+    "maxDeliveries": 3, 
+    "queueId": "test-queue-1", 
+    "type": "queue"
+  }, 
+  {
+    "deadLetterSources": [
+    	"test-queue-1",
+    	"test-queue-2",
+    	"test-queue-3"
+    ], 
+    "defaultDeliveryDelay": 0, 
+    "defaultLockTtl": 120000, 
+    "defaultTtl": 604800000, 
+    "encrypted": false, 
+    "fifo": false, 
+    "queueId": "test-dlq", 
+    "type": "queue"
+  }, 
+  {
+    "deadLetterQueueId": "test-dlq", 
+    "defaultDeliveryDelay": 0, 
+    "defaultLockTtl": 120000, 
+    "defaultTtl": 604800000, 
+    "encrypted": false, 
+    "fifo": false, 
+    "maxDeliveries": 3, 
+    "queueId": "test-queue-2", 
+    "type": "queue"
+  },
+  {
+    "deadLetterQueueId": "test-dlq", 
+    "defaultDeliveryDelay": 0, 
+    "defaultLockTtl": 120000, 
+    "defaultTtl": 604800000, 
+    "encrypted": false, 
+    "fifo": false, 
+    "maxDeliveries": 3, 
+    "queueId": "test-queue-3", 
+    "type": "queue"
+  }
+]

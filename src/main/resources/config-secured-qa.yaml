@@ -1,0 +1,8 @@
+mule:
+  api:
+    domainName: "![]"
+    orgId: "![]"
+    username: "![]"
+    password: "![]"
+  env:
+    id: "![]"

@@ -1,0 +1,22 @@
+[
+  {
+    "queueId": "test-queue-1",
+    "queueDepth": 0,
+    "inFlightMessages": 0
+  },
+  {
+    "queueId": "test-dlq",
+    "queueDepth": 1,
+    "inFlightMessages": 0
+  },
+  {
+    "queueId": "test-queue-2",
+    "queueDepth": 60,
+    "inFlightMessages": 4
+  },
+  {
+    "queueId": "test-queue-3",
+    "queueDepth": 30,
+    "inFlightMessages": 4
+  }
+]

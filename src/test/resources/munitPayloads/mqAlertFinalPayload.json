@@ -1,0 +1,12 @@
+[
+  {
+    "queueId": "test-queue-2",
+    "depth": 60,
+    "alert": "CRITICAL"
+  },
+  {
+    "queueId": "test-queue-3",
+    "depth": 30,
+    "alert": "WARNING"
+  }
+]

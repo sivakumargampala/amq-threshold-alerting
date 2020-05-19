@@ -1,0 +1,22 @@
+[
+  {
+    "destination": "test-queue-1", 
+    "inflightMessages": 0, 
+    "messages": 0
+  }, 
+  {
+    "destination": "test-dlq", 
+    "inflightMessages": 0, 
+    "messages": 1
+  }, 
+  {
+    "destination": "test-queue-2", 
+    "inflightMessages": 4, 
+    "messages": 60
+  },
+  {
+    "destination": "test-queue-3", 
+    "inflightMessages": 4, 
+    "messages": 30
+  }
+]
